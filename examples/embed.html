@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+  Shadow DOM bundle (embed.js) test page: one floating and one inline mount, plus hostile host styles to check
+  isolation. The page's origin must be in the llm-server CORS_ORIGINS, so open it through the dev server:
+    http://localhost:5173/examples/embed.html
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>embed.js example</title>
+    <style>
+      /* Deliberately hostile host styles: none of this may reach the widget. */
+      html { font-size: 62.5%; }
+      body { font: 1.5rem/1.2 Georgia, serif; color: #7c2d12; margin: 2rem; }
+      * { box-sizing: content-box; letter-spacing: 0.05em; }
+      button { margin: 0 0.4rem 0.4rem 0; font-size: 1.4rem; }
+      div { border-color: red; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+      #inline { height: 560px; border: 2px dashed #999; }
+    </style>
+    <script src="/embed.js"></script>
+    <!-- Included twice on purpose: the second copy must be a no-op. -->
+    <script src="/embed.js"></script>
+  </head>
+  <body>
+    <h1>embed.js (Shadow DOM, no iframe)</h1>
+    <div class="grid">
+      <div>
+        <h2>Floating instance</h2>
+        <p>
+          <button id="open">open()</button>
+          <button id="close">close()</button>
+          <button id="toggle">toggle()</button>
+        </p>
+        <p>
+          <button id="user">setUser(Jane)</button>
+          <button id="nouser">setUser(null)</button>
+          <button id="ctx">setContext(...)</button>
+        </p>
+        <p>
+          <button data-theme="light">light</button>
+          <button data-theme="dark">dark</button>
+          <button data-theme="auto">auto</button>
+        </p>
+        <p><button id="unmount">unmount() both</button></p>
+      </div>
+      <div>
+        <h2>Inline instance</h2>
+        <div id="inline"></div>
+      </div>
+    </div>
+
+    <script>
+      const apiUrl = "http://localhost:8000";
+      const floating = McpChatEmbed.mount({
+        apiUrl,
+        key: "pk_dev_firm1",
+        title: "Firm Assistant",
+        color: "#1e3a8a",
+        greeting: "How can I help with your matters?",
+        suggestions: ["What's on my calendar this week?", "Show open matters for Acme Corp"],
+        user: { id: "u-42", name: "Jane Doe", role: "partner" },
+        context: "Viewing the dashboard",
+        position: "right",
+      });
+      const inline = McpChatEmbed.mount({ apiUrl, key: "pk_dev_firm2", variant: "inline", target: "#inline", title: "Inline", theme: "dark" });
+
+      document.getElementById("open").onclick = () => floating.open();
+      document.getElementById("close").onclick = () => floating.close();
+      document.getElementById("toggle").onclick = () => floating.toggle();
+      document.getElementById("user").onclick = () => floating.setUser({ id: "u-7", name: "Jane Roe", role: "associate" });
+      document.getElementById("nouser").onclick = () => floating.setUser(null);
+      document.getElementById("ctx").onclick = () => floating.setContext("Viewing matter 25-0122 (Acme Corp v. Globex)");
+      document.querySelectorAll("[data-theme]").forEach((b) => (b.onclick = () => floating.setTheme(b.dataset.theme)));
+      document.getElementById("unmount").onclick = () => (floating.unmount(), inline.unmount());
+    </script>
+  </body>
+</html>

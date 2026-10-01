@@ -1,0 +1,71 @@
+<!doctype html>
+<!--
+  Loader + iframe (widget.js) test page. Works from any origin, e.g.
+    python -m http.server 5180 -d chat-widget/examples   ->  http://localhost:5180/loader.html
+  or through the dev server: http://localhost:5173/examples/loader.html
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>widget.js example</title>
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; max-width: 720px; }
+      button { margin: 0 0.4rem 0.4rem 0; }
+      pre { background: #f4f4f5; padding: 0.75rem; border-radius: 8px; min-height: 4rem; }
+    </style>
+    <script
+      src="http://localhost:5173/widget.js"
+      data-key="pk_dev_firm1"
+      data-title="Firm Assistant"
+      data-color="#1e3a8a"
+      data-theme="auto"
+      data-greeting="How can I help with your matters?"
+      data-suggestions="What's on my calendar this week?|Show open matters for Acme Corp"
+      defer
+    ></script>
+    <!-- Included twice on purpose: the second copy must be a no-op. -->
+    <script src="http://localhost:5173/widget.js" defer></script>
+  </head>
+  <body>
+    <h1>widget.js (loader + iframe)</h1>
+    <p>
+      <button id="open">open()</button>
+      <button id="close">close()</button>
+      <button id="toggle">toggle()</button>
+    </p>
+    <p>
+      <button id="user">setUser(Jane)</button>
+      <button id="nouser">setUser(null)</button>
+      <button id="ctx">setContext(matter 25-0122)</button>
+    </p>
+    <p>
+      <button data-theme="light">setTheme(light)</button>
+      <button data-theme="dark">setTheme(dark)</button>
+      <button data-theme="auto">setTheme(auto)</button>
+    </p>
+    <h2>Events</h2>
+    <pre id="log"></pre>
+
+    <script>
+      const log = (t) => (document.getElementById("log").textContent += `${new Date().toLocaleTimeString()} ${t}\n`);
+      window.addEventListener("DOMContentLoaded", () => {
+        const w = window.McpChatWidget;
+        // Set before the iframe exists: queued and delivered on "ready".
+        w.setUser({ id: "u-42", name: "Jane Doe", email: "jane@firm.example", role: "partner" });
+        w.setContext("Viewing matter 25-0122 (Acme Corp v. Globex)");
+        ["ready", "open", "close"].forEach((ev) => w.on(ev, () => log(ev)));
+        const off = w.on("open", () => log("(one-shot open handler)"));
+        w.on("open", () => off());
+
+        document.getElementById("open").onclick = () => w.open();
+        document.getElementById("close").onclick = () => w.close();
+        document.getElementById("toggle").onclick = () => w.toggle();
+        document.getElementById("user").onclick = () => w.setUser({ id: "u-7", name: "Jane Roe", role: "associate" });
+        document.getElementById("nouser").onclick = () => w.setUser(null);
+        document.getElementById("ctx").onclick = () => w.setContext("Viewing matter 25-0122");
+        document.querySelectorAll("[data-theme]").forEach((b) => (b.onclick = () => w.setTheme(b.dataset.theme)));
+      });
+    </script>
+  </body>
+</html>

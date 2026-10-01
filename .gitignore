@@ -1,0 +1,10 @@
+# Dev watch build of the Shadow DOM embed (served at /embed.js by the dev server)
+.embed-dev/
+# Built by `npm run pack` in packages/react (customer-frontend vendors its own copy)
+packages/react/*.tgz
+
+# Dependencies
+node_modules/
+
+# Local env (secrets) - see .env.example
+.env

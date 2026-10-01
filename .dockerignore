@@ -1,0 +1,11 @@
+**/node_modules
+dist/
+.embed-dev/
+# The React package is built/packed separately (npm run pack in packages/react)
+packages/*/dist/
+packages/**/*.tgz
+examples/
+.env
+.env.*
+!.env.example
+*.log

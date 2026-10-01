@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arunoday Legal Associates · Advocates, Dhaka (visitor demo)</title>
+    <!--
+      A stand-in for the firm's public website. The widget is loaded with the firm's PUBLIC key (pk_...), so
+      the LLM server treats every conversation as a website visitor: only the intake tools (public firm info,
+      consultation slots, capture lead, book, hand off), no client or billing data.
+
+      Serve this folder from any origin (e.g. `npx serve chat-widget/examples -l 5180`) with the chat-widget
+      app running on :5173. New leads appear in the admin console (Visitors).
+    -->
+    <style>
+      :root { color-scheme: light; --ink: #1c2233; --muted: #5b6275; --brand: #1e2a4a; --gold: #c9a45c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Georgia, "Times New Roman", serif; color: var(--ink); background: #faf8f4; }
+      header { background: var(--brand); color: #fff; padding: 20px 24px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+      header b { font-size: 22px; letter-spacing: .02em; }
+      header span { color: var(--gold); font: 14px system-ui, sans-serif; }
+      main { max-width: 880px; margin: 0 auto; padding: 48px 16px 96px; }
+      h1 { font-size: clamp(28px, 5vw, 42px); margin: 0 0 12px; }
+      p { font: 17px/1.6 system-ui, sans-serif; color: var(--muted); }
+      ul { font: 16px/1.9 system-ui, sans-serif; padding-left: 20px; }
+      .cta { display: inline-block; margin-top: 12px; background: var(--brand); color: #fff; border: 0; border-radius: 8px; padding: 12px 18px; font: 600 15px system-ui, sans-serif; cursor: pointer; }
+      footer { font: 13px system-ui, sans-serif; color: var(--muted); text-align: center; padding: 24px; }
+    </style>
+  </head>
+  <body>
+    <header><b>Arunoday Legal Associates</b><span>Dhaka · Chattogram · Advocates &amp; Legal Consultants</span></header>
+    <main>
+      <h1>Trusted counsel, since 1999.</h1>
+      <p>
+        Civil litigation, writ and constitutional matters, corporate and banking, criminal defence, family law, land and
+        labour. Tell our assistant what's going on and request a consultation; our chambers will confirm.
+      </p>
+      <button class="cta" onclick="window.McpChatWidget && McpChatWidget.open()">Talk to us</button>
+      <ul>
+        <li>Initial consultations in person, by video or by phone (Sunday–Thursday)</li>
+        <li>Chambers at Kakrail, Dhaka and Agrabad, Chattogram</li>
+      </ul>
+    </main>
+    <footer>Demo page with a fictional firm. Chatting does not create a lawyer–client relationship.</footer>
+
+    <script
+      src="http://localhost:5173/widget.js"
+      data-key="pk_dev_firm1"
+      data-title="Arunoday Legal"
+      data-color="#1e2a4a"
+      data-greeting="Hi! How can we help?"
+      data-suggestions="My brother was arrested — we need bail|I have a land dispute|I'd like to book a consultation|How do I complain about an advocate?"
+      defer
+    ></script>
+    <script>
+      // Tell the assistant which page the visitor is on (stored with their inquiry).
+      window.addEventListener("load", function () {
+        if (window.McpChatWidget) McpChatWidget.setContext("Visitor is on the firm website, page " + location.pathname);
+      });
+    </script>
+  </body>
+</html>

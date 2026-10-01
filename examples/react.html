@@ -1,0 +1,81 @@
+<!doctype html>
+<!--
+  mcp-chat-react test page. Imports the *built* package (packages/react/dist, run `npm run build` there first)
+  through the Vite dev server, which resolves "react" for it:
+    http://localhost:5173/examples/react.html
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mcp-chat-react example</title>
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; }
+      button { margin: 0 0.4rem 0.4rem 0; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+      .inline-box { height: 520px; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import { createElement as h, useRef, useState } from "react";
+      import { createRoot } from "react-dom/client";
+      import { ChatWidget } from "../packages/react/dist/index.js";
+
+      function Demo() {
+        const ref = useRef(null);
+        const [open, setOpen] = useState(false);
+        const [theme, setTheme] = useState("auto");
+        const [user, setUser] = useState({ id: "u-42", name: "Jane Doe", role: "partner" });
+        const [context, setContext] = useState("Viewing the dashboard");
+        const [log, setLog] = useState([]);
+        const add = (t) => setLog((l) => [...l, `${new Date().toLocaleTimeString()} ${t}`]);
+
+        const btn = (label, onClick) => h("button", { onClick }, label);
+        return h(
+          "div",
+          null,
+          h("h1", null, "mcp-chat-react"),
+          h(
+            "div",
+            { className: "grid" },
+            h(
+              "div",
+              null,
+              h("h2", null, "Floating (controlled)"),
+              h("p", null, btn("ref.open()", () => ref.current.open()), btn("ref.close()", () => ref.current.close()), btn("ref.toggle()", () => ref.current.toggle())),
+              h("p", null, btn("user: Jane Roe", () => setUser({ id: "u-7", name: "Jane Roe", role: "associate" })), btn("user: null", () => setUser(null)), btn("context: matter", () => setContext("Viewing matter 25-0122"))),
+              h("p", null, ...["light", "dark", "auto"].map((t) => btn(`theme ${t}`, () => setTheme(t)))),
+              h("p", null, `open=${open} theme=${theme} user=${user ? user.name : "null"}`),
+              h("pre", null, log.join("\n"))
+            ),
+            h(
+              "div",
+              null,
+              h("h2", null, "Inline"),
+              h("div", { className: "inline-box" }, h(ChatWidget, { src: "http://localhost:5173", chatKey: "pk_dev_firm2", variant: "inline", title: "Inline", theme, user, context }))
+            )
+          ),
+          h(ChatWidget, {
+            ref,
+            src: "http://localhost:5173",
+            chatKey: "pk_dev_firm1",
+            title: "Firm Assistant",
+            color: "#1e3a8a",
+            greeting: "How can I help with your matters?",
+            suggestions: ["What's on my calendar this week?", "Show open matters for Acme Corp"],
+            theme,
+            user,
+            context,
+            open,
+            onOpenChange: (o) => (setOpen(o), add(`onOpenChange(${o})`)),
+            onReady: () => add("onReady"),
+          })
+        );
+      }
+
+      createRoot(document.getElementById("root")).render(h(Demo));
+    </script>
+  </body>
+</html>
