@@ -18,9 +18,10 @@ Every widget needs its tenant's **widget key**, created in the admin console (ad
 the `X-Chat-Key` header. The LLM server looks it up in the platform database, and the key alone decides:
 
 - **the tenant**: the MCP tools then see only that tenant's data;
-- **the audience**: a **public key** (`pk_…`) = website visitor. The assistant sees only the data the tenant made
-  public (its profile, public collections and knowledge) and can take leads and appointment requests. A
-  **secret key** (`sk_…`) = the tenant's staff: it also sees staff-only data, leads and appointments.
+- **the audience**: a **public key** (`pk_…`) = website visitor. The assistant answers from the tenant's profile
+  and the knowledge trained from its files (visitors only get answers, never the files) and can take leads and
+  appointment requests. A **secret key** (`sk_…`) = the tenant's staff: the same knowledge, plus leads, appointments
+  and the library files.
 
 No key, a revoked key, a suspended tenant or a widget turned off in the admin console is refused. A tenant can pin
 its public keys to its own websites (widget "allowed origins", enforced for the Shadow DOM embed, which calls

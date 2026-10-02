@@ -1,9 +1,10 @@
-import { Download, File, FileAudio, FileImage, FileText, FileVideo, Trash2 } from "lucide-react";
+import { Download, File, FileImage, FileText, Trash2 } from "lucide-react";
 
 import { fileApi } from "@/api/appServices";
 import { formatBytes } from "@/lib/utils";
 
-const ICONS = { document: FileText, pdf: FileText, image: FileImage, audio: FileAudio, video: FileVideo };
+// The categories mcp-server reports (its /api/files); anything else gets the plain icon
+const ICONS = { document: FileText, pdf: FileText, image: FileImage };
 
 export function FileList({ files, onPick, onDelete }) {
   if (!files.length) {
