@@ -60,6 +60,29 @@ without it the iframe falls back to its referrer. Every field is optional. Nothi
 (location, notifications) and no fingerprinting (canvas, fonts, audio). The LLM server stores it with the session,
 and the device part with the visitor.
 
+### What visitors see
+
+Only the conversation: the visitor's messages and the assistant's replies, rendered as Markdown (lists, bold,
+tables, links; links open in a new tab with `rel="noopener noreferrer"`; raw HTML is never rendered). The
+assistant's tool calls, the model and token usage are **never shown**, in any of the three options or in the
+standalone app's message list. `POST /api/chat` and `GET /api/sessions/{id}` still return `tool_calls` (the admin
+console's chat history uses them); the widget just doesn't keep or render them. While a reply is on its way the chat
+shows a typing indicator.
+
+Errors never show the server's or the model provider's text (`src/lib/errors.js`; it goes to the browser console):
+
+| What happened | Visitor sees | |
+| --- | --- | --- |
+| Network down | "We couldn't connect. Please check your connection and try again." | **Retry** on the failed message |
+| 429 | "We're getting a lot of messages right now. Please try again in a moment." | **Retry** |
+| Anything else (502 from the provider, 5xx, timeout) | "Sorry, something went wrong. Please try again." | **Retry** |
+| 403 for a blocked visitor | "Sorry, you can't chat with us here." | input replaced by the message |
+| 401 / other 403 (widget turned off, suspended account, unknown key, origin not allowed) | "This chat isn't available right now. Please check back later." | input replaced by the message |
+
+The tenant's accent color (admin console, or `data-color` / `color`) colors the visitor's bubbles, the send button
+and the header avatar. The input is focused when the chat opens (not on touch screens); Enter sends, Shift+Enter
+adds a line.
+
 ---
 
 ## 1. Loader + iframe — `widget.js`
@@ -93,7 +116,7 @@ Including the script twice is a no-op. Everything set before the iframe is ready
 | `data-key` | **required**: the tenant's widget key (`pk_…`) | none |
 | `data-title` | header title | the widget's title in the admin console |
 | `data-position` | `right` \| `left` | admin console setting |
-| `data-color` | launcher background (CSS color) | admin console accent color |
+| `data-color` | launcher background (CSS color); as `#rrggbb` also the chat's accent | admin console accent color |
 | `data-theme` | `light` \| `dark` \| `auto` (`auto` = `prefers-color-scheme`) | `auto` |
 | `data-open` | `true` opens on load | closed |
 | `data-greeting` | heading on the empty chat | generic text |
@@ -268,7 +291,8 @@ and posts with the chat origin as `targetOrigin`. The chat app only accepts mess
 (comma-separated). The app posts `ready`/`close` with `"*"` since they carry no data. Host state is re-sent on every
 `ready`, so an iframe reload loses nothing.
 
-Iframe URL: `/?embed=1&title=…&greeting=…&suggestions=a|b&theme=…[&closable=0]`.
+Iframe URL: `/?embed=1&title=…&greeting=…&suggestions=a|b&color=…&theme=…[&closable=0]`. The host focuses the
+iframe when the chat opens (the app then focuses its input) and its launcher when the chat closes with focus inside.
 
 What reaches the LLM: `context` = `"User: Jane Doe (partner, id u-42, jane@firm.example)\n<page context>"`, cut to
 2000 characters (the llm-server limit). The user line comes first, so only page context is ever truncated.

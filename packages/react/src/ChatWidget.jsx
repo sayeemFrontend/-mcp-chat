@@ -184,6 +184,16 @@ export const ChatWidget = forwardRef(function ChatWidget(
   useEffect(() => {
     if (open) post({ type: MSG_PAGE, page: currentPage() });
   }, [post, open]);
+  // Focus moves into the chat on open (the app then focuses its input) and back to the launcher when the chat
+  // that had it closes.
+  const launcherRef = useRef(null);
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (inline || open === wasOpen.current) return;
+    wasOpen.current = open;
+    if (open) iframeRef.current?.focus();
+    else if (document.activeElement === iframeRef.current) launcherRef.current?.focus();
+  }, [open, inline]);
 
   useImperativeHandle(
     ref,
@@ -219,6 +229,7 @@ export const ChatWidget = forwardRef(function ChatWidget(
       </div>
       <button
         type="button"
+        ref={launcherRef}
         className={cx("mcpcr-launcher", `mcpcr-${side}`)}
         style={{ background: color }}
         aria-label={open ? "Close chat" : "Open chat"}

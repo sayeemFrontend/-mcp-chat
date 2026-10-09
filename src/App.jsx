@@ -32,7 +32,8 @@ function StandaloneApp() {
     setTimeout(() => setNotice(null), 4000);
   };
 
-  const { messages, loading, send, reset } = useChat({ services, getPage: currentPage });
+  // Same messages as visitors see (no tool calls inline); the sidebar lists the MCP tools for developers.
+  const { messages, loading, closed, send, retry, reset } = useChat({ services, getPage: currentPage });
 
   useEffect(() => {
     modelApi
@@ -56,7 +57,7 @@ function StandaloneApp() {
   }, [dark]);
 
   const handleSend = (text = input) => {
-    if (!text.trim()) return;
+    if (!text.trim() || loading) return;
     send(text);
     setInput("");
   };
@@ -84,19 +85,26 @@ function StandaloneApp() {
                   {notice.text}
                 </span>
               )}
-              <Button variant="ghost" size="icon" onClick={() => setDark((d) => !d)}>
+              <Button variant="ghost" size="icon" onClick={() => setDark((d) => !d)} aria-label="Toggle theme">
                 {dark ? <Sun /> : <Moon />}
               </Button>
             </div>
           </header>
 
-          <MessageList messages={messages} loading={loading} onSuggestion={handleSend} />
+          <MessageList
+            messages={messages}
+            loading={loading}
+            disabled={!!closed}
+            onSuggestion={handleSend}
+            onRetry={retry}
+          />
 
           <ChatInput
             value={input}
             onChange={setInput}
             onSend={() => handleSend()}
             loading={loading}
+            closed={closed}
           />
         </main>
       </div>

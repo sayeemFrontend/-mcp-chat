@@ -9,7 +9,7 @@
  *   data-key          the tenant's widget key (required): pk_... from the admin console
  *   data-title        header title inside the widget
  *   data-position     "right" | "left"
- *   data-color        launcher background color
+ *   data-color        launcher background color, also the chat's accent (#rrggbb)
  *   data-theme        "light" | "dark" | "auto"              (default "auto" = follows the OS)
  *   data-open         "true" to open on load
  *   data-greeting     heading on the empty chat
@@ -56,6 +56,7 @@
   if (ds.tenant) query.set("tenant", ds.tenant);
   if (ds.greeting) query.set("greeting", ds.greeting);
   if (ds.suggestions) query.set("suggestions", ds.suggestions);
+  if (ds.color) query.set("color", ds.color);
   // The key travels in the fragment, which browsers never send to a server.
   var src = origin + "/?" + query.toString() + (key ? "#key=" + encodeURIComponent(key) : "");
 
@@ -166,9 +167,14 @@
     next = !!next;
     if (next === isOpen) return;
     isOpen = next;
+    // Focus moves into the chat on open (the app then focuses its input) and back to the launcher when the chat
+    // that had it closes.
     if (isOpen) {
       loadFrame();
       postPage();
+      iframe.focus();
+    } else if (document.activeElement === iframe) {
+      button.focus();
     }
     panel.classList.toggle("mcpw-open", isOpen);
     button.innerHTML = isOpen ? CLOSE_ICON : CHAT_ICON;

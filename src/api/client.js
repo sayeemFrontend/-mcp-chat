@@ -41,7 +41,8 @@ export function createApi(baseUrl = API_URL, { chatKey, tenant } = {}) {
     return config;
   });
 
-  // Normalize FastAPI error payloads into a readable message (keeping the HTTP status).
+  // Normalize FastAPI error payloads into a readable message (keeping the HTTP status, the detail and the axios code).
+  // This text is for developers; visitors see lib/errors.js describeError() instead.
   api.interceptors.response.use(
     (res) => res,
     (err) => {
@@ -50,7 +51,13 @@ export function createApi(baseUrl = API_URL, { chatKey, tenant } = {}) {
         (typeof detail === "string" ? detail : detail && JSON.stringify(detail)) ||
         (err.code === "ECONNABORTED" ? "Request timed out." : null) ||
         (!err.response ? `Cannot reach the LLM server at ${baseUrl}.` : err.message);
-      return Promise.reject(Object.assign(new Error(message), { status: err.response?.status }));
+      return Promise.reject(
+        Object.assign(new Error(message), {
+          status: err.response?.status,
+          detail: typeof detail === "string" ? detail : undefined,
+          code: err.code,
+        })
+      );
     }
   );
 

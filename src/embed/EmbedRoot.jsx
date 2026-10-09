@@ -18,6 +18,7 @@ export function EmbedRoot({ store, services, options: hostOptions }) {
     ...hostOptions,
     title: hostOptions.title || settings?.title || "Assistant",
     greeting: hostOptions.greeting || settings?.greeting,
+    accent: hostOptions.color || settings?.accent_color,
     color: hostOptions.color || settings?.accent_color || "#171717",
     position: hostOptions.position || (settings?.position === "bottom-left" ? "left" : "right"),
   };
@@ -25,11 +26,15 @@ export function EmbedRoot({ store, services, options: hostOptions }) {
   const [portal, setPortal] = useState(null);
   // Mount the chat on first open only, then keep it (and its conversation) while closed.
   const [started, setStarted] = useState(state.open);
+  // Bumped on every open of the floating chat, so it focuses its input (never for inline: it's always there).
+  const [focusKey, setFocusKey] = useState(0);
   const inline = options.variant === "inline";
 
   useEffect(() => {
-    if (state.open) setStarted(true);
-  }, [state.open]);
+    if (!state.open) return;
+    setStarted(true);
+    if (!inline) setFocusKey((k) => k + 1);
+  }, [state.open, inline]);
 
   const getContext = useCallback(() => {
     const { user, context } = store.get();
@@ -42,6 +47,8 @@ export function EmbedRoot({ store, services, options: hostOptions }) {
       title={options.title}
       greeting={options.greeting}
       suggestions={options.suggestions}
+      accentColor={options.accent}
+      focusKey={focusKey}
       getContext={getContext}
       getPage={currentPage}
       dark={dark}

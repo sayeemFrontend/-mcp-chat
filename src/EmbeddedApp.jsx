@@ -20,12 +20,14 @@ import {
   sanitizeUser,
 } from "@/lib/protocol";
 
-// ?embed=1&title=..&greeting=..&suggestions=a|b&theme=light|dark|auto&closable=0 - set by widget.js / mcp-chat-react.
-// Title and greeting default to the tenant's widget settings (admin console) when the host doesn't set them.
+// ?embed=1&title=..&greeting=..&suggestions=a|b&color=%23rrggbb&theme=light|dark|auto&closable=0 - set by widget.js /
+// mcp-chat-react. Title, greeting and color default to the tenant's widget settings (admin console) when the host
+// doesn't set them.
 const params = new URLSearchParams(window.location.search);
 const TITLE = params.get("title");
 const GREETING = params.get("greeting");
 const SUGGESTIONS = params.get("suggestions")?.split("|").filter(Boolean);
+const COLOR = params.get("color");
 const CLOSABLE = params.get("closable") !== "0";
 // Optional build-time allowlist of host origins that may push context/user/theme (comma-separated).
 const ALLOWED_ORIGINS = (import.meta.env.VITE_EMBED_ALLOWED_ORIGINS || "")
@@ -39,6 +41,14 @@ export function EmbeddedApp() {
   // Read at send time, so kept in a ref instead of state.
   const hostRef = useRef({ context: null, user: null, page: null });
   const settings = useWidgetSettings(services);
+  // Bumped when this frame gets focus (the host focuses it on open), so the chat focuses its input.
+  const [focusKey, setFocusKey] = useState(() => (document.hasFocus() ? 1 : 0));
+
+  useEffect(() => {
+    const onFocus = () => setFocusKey((k) => k + 1);
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
 
   useEffect(() => {
     if (!settings || window.parent === window) return;
@@ -85,6 +95,8 @@ export function EmbeddedApp() {
           title={TITLE || settings?.title || "Assistant"}
           greeting={GREETING || settings?.greeting}
           suggestions={SUGGESTIONS}
+          accentColor={COLOR || settings?.accent_color}
+          focusKey={focusKey}
           getContext={getContext}
           getPage={getPage}
           dark={dark}
