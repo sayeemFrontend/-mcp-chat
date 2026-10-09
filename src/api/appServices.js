@@ -6,7 +6,7 @@ import { createServices } from "./services";
 //
 // The widget key decides the tenant on the LLM server. In the iframe embed the host passes
 // it in the URL fragment (#key=..., never sent to a server); it is removed from the address bar right away.
-// Only the standalone app falls back to VITE_WIDGET_KEY.
+// Only the standalone app falls back to VITE_WIDGET_KEY. No key at all is fine: the chat is the public assistant.
 function chatKey() {
   const embedded = new URLSearchParams(window.location.search).has("embed");
   const hash = new URLSearchParams(window.location.hash.slice(1));

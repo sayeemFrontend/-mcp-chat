@@ -118,7 +118,7 @@ export const ChatWidget = forwardRef(function ChatWidget(
     if (inline) query.set("closable", "0");
     if (tenant) query.set("tenant", tenant);
     const url = new URL(`?${query}`, src.endsWith("/") ? src : `${src}/`);
-    // The widget key goes in the fragment (never sent to a server). It decides the tenant.
+    // The widget key goes in the fragment (never sent to a server). It decides the tenant; none = the public assistant.
     if (chatKey) url.hash = `key=${encodeURIComponent(chatKey)}`;
     return url.toString();
   }, [src, title, greeting, suggestionsKey, inline, chatKey, tenant]);

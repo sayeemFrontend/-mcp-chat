@@ -24,9 +24,10 @@ export interface ChatWidgetProps {
   greeting?: string;
   /** Starter prompts on the empty chat. */
   suggestions?: string[];
-  /** The tenant's widget key from the admin console (required; sent as X-Chat-Key), pk_.... It decides the
-   * tenant. Reloads the iframe. */
-  chatKey: string;
+  /** The tenant's widget key from the admin console (sent as X-Chat-Key), pk_.... It decides the tenant.
+   * Optional: without it the chat is the public assistant (general questions from open data, no business data).
+   * Reloads the iframe. */
+  chatKey?: string;
   /** Optional tenant id; the key must then belong to that tenant. */
   tenant?: string;
   /** What the user is looking at; sent with every message. Pushed live. */

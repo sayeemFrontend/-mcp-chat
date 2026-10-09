@@ -4,7 +4,8 @@ import { isUuid, load, randomUuid, save } from "@/lib/storage";
 
 export const API_URL = import.meta.env.VITE_CHAT_API_URL || "http://localhost:8000";
 
-// The widget key (X-Chat-Key, pk_...), created per tenant in the admin console, decides the tenant.
+// The widget key (X-Chat-Key, pk_...), created per tenant in the admin console, decides the tenant. It is optional:
+// without it (no header at all) the LLM server answers as the public assistant.
 export const KEY_HEADER = "X-Chat-Key";
 // Optional: when sent, the LLM server checks that the key belongs to this tenant.
 export const TENANT_HEADER = "X-Tenant-Id";

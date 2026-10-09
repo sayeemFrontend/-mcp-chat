@@ -11,9 +11,9 @@ standalone app at `/` and can be put on customer sites in three ways:
 
 `{origin}` is wherever this app is deployed, e.g. `http://localhost:5173`.
 
-### Widget key: which tenant
+### Widget key: which tenant (optional)
 
-Every widget needs its tenant's **widget key**, created in the admin console (admin-frontend, Keys): the
+A business's widget has its tenant's **widget key**, created in the admin console (admin-frontend, Keys): the
 `data-key` attribute (loader, Shadow DOM), or the `chatKey` prop (React) / `key` option (`mount()`). It is sent as
 the `X-Chat-Key` header. The LLM server looks it up in the platform database, and the key alone decides:
 
@@ -21,22 +21,38 @@ the `X-Chat-Key` header. The LLM server looks it up in the platform database, an
 website: the assistant answers from the tenant's profile and the knowledge trained from its files (visitors only
 get answers, never the files) and can take leads and appointment requests.
 
-No key, a revoked key, a suspended tenant or a widget turned off in the admin console is refused. A tenant can pin
+**Without a key** the widget still works: it is the **public assistant**, which answers everyday questions (weather,
+time and dates, places, countries, exchange rates, people and things from Wikipedia, DuckDuckGo instant answers) from
+free open-data sources, citing each source. No `X-Chat-Key` header is sent; the LLM server stores those chats under
+the system tenant `public`, rate-limits them per visitor and IP (a 429 shows the "lot of messages" text below), and
+`GET /api/widget` returns the public assistant's settings. With a key, the business's assistant can also answer such
+general questions with the same tools, kept apart from what the business says.
+
+While a chat runs without a key, a small fixed bar sits under the header (all three options and the standalone app):
+"Want answers from your own business data? Add your widget key." with a **Get a key** link to the admin console's
+sign-up page (`${VITE_ADMIN_URL}/signup`, new tab), where a business signs up and then creates its key under Keys.
+It only appears when `GET /api/widget` answers `public: true` (never with a key, nor before that answer or after an
+error), and the visitor can dismiss it for the browser session (`sessionStorage`). `VITE_ADMIN_URL` is a build-time
+setting (`.env`, Dockerfile build arg, both compose files; default `http://localhost:5175`) and is baked into the
+app and `embed.js` alike.
+
+A revoked or unknown key (sent but not valid: never a silent fallback to the public assistant), a suspended tenant
+or a widget turned off in the admin console is refused. A tenant can pin
 its keys to its own websites (widget "allowed origins", enforced for the Shadow DOM embed, which calls
 the API from the host page). The widget's title, greeting, launcher color and position default to the settings
 chosen in the admin console; attributes and props set on the page override them. `data-tenant` / `tenant` are
 optional: when set, the key must belong to that tenant.
 
-- **Website:** the key. See `examples/visitor.html`.
+- **Website:** the key, or none for the public assistant. See `examples/visitor.html`.
 - **Iframe (options 1 and 2):** the key travels in the URL fragment (`#key=…`). Browsers never send the fragment to a
   server, and the chat app removes it from its address bar. The embedded chat **never** falls back to the build's
   `VITE_WIDGET_KEY`, so only the host decides the tenant.
-- **Standalone app at `/`:** uses `VITE_WIDGET_KEY` from `.env` (dev convenience). Don't set it on a build that is publicly reachable.
+- **Standalone app at `/`:** uses `VITE_WIDGET_KEY` from `.env` (dev convenience; empty = the public assistant). Don't set it on a build that is publicly reachable.
 - `embed.js` never contains a key; it only sends the one passed to `mount()`.
 
 ### Requests, visitor id and session
 
-Every request (all three options) carries `X-Chat-Key` and `X-Visitor-Id`: a random UUID the widget makes up on
+Every request (all three options) carries `X-Chat-Key` (when there is a key) and `X-Visitor-Id`: a random UUID the widget makes up on
 first load (`crypto.randomUUID`) and keeps in `localStorage` (`mcp-chat:visitor`; in memory only when storage is
 blocked). It identifies the visitor, not the IP address. The LLM server keeps one visitor per tenant for it, so the
 same browser on two tenants' sites is two visitors; if it ever answers with another `visitor_id` (ours was missing
@@ -74,7 +90,7 @@ Errors never show the server's or the model provider's text (`src/lib/errors.js`
 | What happened | Visitor sees | |
 | --- | --- | --- |
 | Network down | "We couldn't connect. Please check your connection and try again." | **Retry** on the failed message |
-| 429 | "We're getting a lot of messages right now. Please try again in a moment." | **Retry** |
+| 429 (a rate limit, see the root README) | "We're getting a lot of messages right now. Please try again in a moment." | **Retry** |
 | Anything else (502 from the provider, 5xx, timeout) | "Sorry, something went wrong. Please try again." | **Retry** |
 | 403 for a blocked visitor | "Sorry, you can't chat with us here." | input replaced by the message |
 | 401 / other 403 (widget turned off, suspended account, unknown key, origin not allowed) | "This chat isn't available right now. Please check back later." | input replaced by the message |
@@ -113,7 +129,7 @@ Including the script twice is a no-op. Everything set before the iframe is ready
 
 | Attribute | Values | Default |
 | --- | --- | --- |
-| `data-key` | **required**: the tenant's widget key (`pk_…`) | none |
+| `data-key` | the tenant's widget key (`pk_…`) | none: the public assistant |
 | `data-title` | header title | the widget's title in the admin console |
 | `data-position` | `right` \| `left` | admin console setting |
 | `data-color` | launcher background (CSS color); as `#rrggbb` also the chat's accent | admin console accent color |
@@ -184,7 +200,7 @@ export function Assistant({ currentUser, matter }) {
 | `title` | `string` | `"Assistant"` | Reloads the iframe when changed. |
 | `greeting` | `string` | | Reloads the iframe when changed. |
 | `suggestions` | `string[]` | | Reloads the iframe when changed. |
-| `chatKey` | `string` | — (required) | The tenant's widget key (`pk_…`). Reloads the iframe when changed. |
+| `chatKey` | `string` | | The tenant's widget key (`pk_…`). Without it the chat is the public assistant (general questions, open data). Reloads the iframe when changed. |
 | `tenant` | `string` | | Optional tenant id; the key must belong to it. |
 | `context` | `string` | | Pushed live. |
 | `user` | `{ id, name, email?, role? } \| null` | | Pushed live. |
@@ -244,7 +260,7 @@ is at `McpChatEmbed.autoMounted`). Including it twice is a no-op. Each `mount()`
 | `title` | `data-title` | admin console title | |
 | `greeting` | `data-greeting` | | |
 | `suggestions` | `data-suggestions` (`a\|b`) | | `string[]` |
-| `key` | `data-key` | — (required) | The tenant's widget key (`X-Chat-Key`), `pk_…`. |
+| `key` | `data-key` | | The tenant's widget key (`X-Chat-Key`), `pk_…`. None: the public assistant. |
 | `tenant` | `data-tenant` | | Optional tenant id; the key must belong to it. |
 | `context` | `data-context` | | |
 | `user` | `data-user` (JSON) | | `{ id, name, email?, role? }` |

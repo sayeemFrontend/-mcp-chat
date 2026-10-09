@@ -2,6 +2,7 @@ import { Bot, Moon, SquarePen, Sun, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { ChatInput } from "@/components/chat/ChatInput";
+import { KeylessBanner } from "@/components/chat/KeylessBanner";
 import { MessageList } from "@/components/chat/MessageList";
 import { Button } from "@/components/ui/button";
 import { useChat } from "@/hooks/useChat";
@@ -84,6 +85,8 @@ export function ChatPanel({
           )}
         </div>
       </header>
+
+      <KeylessBanner services={services} />
 
       <MessageList
         messages={messages}

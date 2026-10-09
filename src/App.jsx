@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { modelApi, services, toolApi } from "@/api/appServices";
 import { ChatInput } from "@/components/chat/ChatInput";
+import { KeylessBanner } from "@/components/chat/KeylessBanner";
 import { MessageList } from "@/components/chat/MessageList";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,8 @@ function StandaloneApp() {
               </Button>
             </div>
           </header>
+
+          <KeylessBanner services={services} />
 
           <MessageList
             messages={messages}

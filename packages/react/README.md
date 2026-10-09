@@ -31,6 +31,9 @@ export function Assistant({ currentUser, matter }) {
   );
 }
 
+// No chatKey: the public assistant (everyday questions from open data: weather, time, places, Wikipedia…)
+<ChatWidget src="https://chat.example.com" />
+
 // Inline: fills its parent, no launcher, always open
 <div style={{ height: 600 }}>
   <ChatWidget src="https://chat.example.com" chatKey="pk_..." variant="inline" />
@@ -42,7 +45,7 @@ export function Assistant({ currentUser, matter }) {
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `src` | `string` | — (required) | Chat app origin / base URL. |
-| `chatKey` | `string` | — (required) | The tenant's widget key (`pk_…`). Reloads the iframe when changed. |
+| `chatKey` | `string` | | The tenant's widget key (`pk_…`). Without it the chat is the public assistant (general questions, open data). Reloads the iframe when changed. |
 | `tenant` | `string` | | Optional tenant id; the key must belong to it. |
 | `title` | `string` | `"Assistant"` | Reloads the iframe when changed. |
 | `greeting` | `string` | | Reloads the iframe when changed. |

@@ -15,10 +15,12 @@ FROM deps AS build
 COPY . .
 # Baked into the bundle at build time: the URL the *browser* uses to reach the LLM server.
 ARG VITE_CHAT_API_URL=http://localhost:8000
+# The admin console; a keyless chat links to its /signup page ("Get a key").
+ARG VITE_ADMIN_URL=http://localhost:5175
 # Widget key of the standalone app at / (embeds get theirs from the host page). Dev convenience only:
 # it is baked into the bundle, so never put a real secret key here for a public deployment.
 ARG VITE_WIDGET_KEY=
-ENV VITE_CHAT_API_URL=$VITE_CHAT_API_URL VITE_WIDGET_KEY=$VITE_WIDGET_KEY
+ENV VITE_CHAT_API_URL=$VITE_CHAT_API_URL VITE_ADMIN_URL=$VITE_ADMIN_URL VITE_WIDGET_KEY=$VITE_WIDGET_KEY
 RUN npm run build
 
 # --- serve ---

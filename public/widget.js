@@ -2,11 +2,13 @@
  * MCP Chat embeddable widget (loader + iframe). See chat-widget/README.md for all options.
  *
  *   <script src="https://<chat-host>/widget.js" data-key="pk_..." defer></script>
+ *   <script src="https://<chat-host>/widget.js" defer></script>      (no key: the public assistant)
  *
  * Adds a floating launcher button that opens the chat app (this build, ?embed=1) in an iframe.
  * Options (data-* attributes on the script tag). Title, greeting, color and position default to the widget
  * settings the tenant chose in the admin console; an attribute here overrides them.
- *   data-key          the tenant's widget key (required): pk_... from the admin console
+ *   data-key          optional: the tenant's widget key, pk_... from the admin console. Without one the chat is
+ *                     the public assistant (general questions from open data, no business data)
  *   data-title        header title inside the widget
  *   data-position     "right" | "left"
  *   data-color        launcher background color, also the chat's accent (#rrggbb)
@@ -41,8 +43,7 @@
   var side = ds.position === "left" ? "left" : "right";
   var color = ds.color || "#171717";
   var title = ds.title || "Assistant";
-  var key = ds.key || ds.chatKey; // data-chat-key: older name of data-key
-  if (!key) console.warn("[mcp-chat] widget.js needs data-key: the tenant's widget key from the admin console");
+  var key = ds.key || ds.chatKey; // data-chat-key: older name of data-key; none = the public assistant
 
   function normalizeTheme(t) {
     return t === "light" || t === "dark" ? t : "auto";

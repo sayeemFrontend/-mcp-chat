@@ -5,6 +5,7 @@
  *   <script>McpChatEmbed.mount({ apiUrl: "https://<llm-server>" })</script>
  *
  * or <script src=".../embed.js" data-auto-mount="true" data-api-url="..." data-title="..."></script>. See README.md.
+ * `key` / data-key (the tenant's widget key) is optional: without one the chat is the public assistant.
  */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -88,8 +89,8 @@ const instances = new Set();
 
 function mount(options = {}) {
   if (!options.apiUrl) throw new Error("McpChatEmbed.mount: `apiUrl` (the LLM server URL) is required");
-  const key = options.key || options.chatKey;
-  if (!key) throw new Error("McpChatEmbed.mount: `key` (the tenant's widget key from the admin console) is required");
+  // Optional: without a key the chat is the public assistant (open data, no business)
+  const key = options.key || options.chatKey || undefined;
   const variant = options.variant === "inline" ? "inline" : "floating";
   const target = variant === "inline" ? resolveTarget(options.target) : null;
   if (variant === "inline" && !target) throw new Error("McpChatEmbed.mount: inline variant needs a `target` element");
