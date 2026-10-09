@@ -9,12 +9,14 @@ import {
   MSG_CLOSE,
   MSG_SETTINGS,
   MSG_CONTEXT,
+  MSG_PAGE,
   MSG_READY,
   MSG_THEME,
   MSG_USER,
   MAX_CONTEXT,
   buildContext,
   normalizeTheme,
+  sanitizePage,
   sanitizeUser,
 } from "@/lib/protocol";
 
@@ -35,7 +37,7 @@ export function EmbeddedApp() {
   const [theme, setTheme] = useState(() => normalizeTheme(params.get("theme")));
   const dark = useDarkMode(theme);
   // Read at send time, so kept in a ref instead of state.
-  const hostRef = useRef({ context: null, user: null });
+  const hostRef = useRef({ context: null, user: null, page: null });
   const settings = useWidgetSettings(services);
 
   useEffect(() => {
@@ -55,6 +57,8 @@ export function EmbeddedApp() {
         hostRef.current.context = typeof data.context === "string" ? data.context.slice(0, MAX_CONTEXT) : null;
       } else if (data.type === MSG_USER) {
         hostRef.current.user = sanitizeUser(data.user);
+      } else if (data.type === MSG_PAGE) {
+        hostRef.current.page = sanitizePage(data.page);
       } else if (data.type === MSG_THEME) {
         setTheme(normalizeTheme(data.theme));
       }
@@ -70,6 +74,8 @@ export function EmbeddedApp() {
   }, [dark]);
 
   const getContext = useCallback(() => buildContext(hostRef.current.user, hostRef.current.context), []);
+  // The host page as its side reported it; a host that doesn't report it: the address the browser gave as referrer.
+  const getPage = useCallback(() => hostRef.current.page || sanitizePage({ url: document.referrer }), []);
 
   return (
     <TooltipProvider>
@@ -80,6 +86,7 @@ export function EmbeddedApp() {
           greeting={GREETING || settings?.greeting}
           suggestions={SUGGESTIONS}
           getContext={getContext}
+          getPage={getPage}
           dark={dark}
           onToggleTheme={() => setTheme(dark ? "light" : "dark")}
           onClose={CLOSABLE ? () => window.parent.postMessage({ type: MSG_CLOSE }, "*") : undefined}

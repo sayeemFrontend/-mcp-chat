@@ -1,13 +1,9 @@
-import { LoaderCircle, Paperclip, SendHorizontal } from "lucide-react";
-import { useRef } from "react";
+import { LoaderCircle, SendHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-export function ChatInput({ value, onChange, onSend, onUpload, loading, uploading }) {
-  const fileRef = useRef(null);
-
+export function ChatInput({ value, onChange, onSend, loading }) {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -18,25 +14,6 @@ export function ChatInput({ value, onChange, onSend, onUpload, loading, uploadin
   return (
     <div className="border-t bg-background/80 p-4 backdrop-blur">
       <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm">
-        <input
-          ref={fileRef}
-          type="file"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onUpload(file);
-            e.target.value = "";
-          }}
-        />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              {uploading ? <LoaderCircle className="animate-spin" /> : <Paperclip />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Upload a document or media file</TooltipContent>
-        </Tooltip>
-
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}

@@ -10,6 +10,7 @@ export const MSG_SETTINGS = "mcp-chat:settings"; // { settings: { title, accent_
 export const MSG_CONTEXT = "mcp-chat:context"; // { context: string | null }
 export const MSG_USER = "mcp-chat:user"; // { user: { id, name, email?, role? } | null }
 export const MSG_THEME = "mcp-chat:theme"; // { theme: "light" | "dark" | "auto" }
+export const MSG_PAGE = "mcp-chat:page"; // { page: { url, title, referrer, viewport } } - stored with a new session
 
 export const THEMES = ["light", "dark", "auto"];
 // Matches the llm-server ChatRequest.context max_length.
@@ -38,4 +39,30 @@ export function describeUser(user) {
 export function buildContext(user, context) {
   const text = [describeUser(user), typeof context === "string" ? context.trim() : null].filter(Boolean).join("\n");
   return text ? text.slice(0, MAX_CONTEXT) : undefined;
+}
+
+// The page the widget is on: the host page (sent by the iframe embeds' host side, read directly by the Shadow DOM
+// embed). Lengths match the llm-server ClientInfo.
+const text = (v, max) => (typeof v === "string" && v ? v.slice(0, max) : undefined);
+const size = (v) => (Number.isFinite(v) && v >= 0 ? Math.min(Math.round(v), 100000) : undefined);
+
+export function sanitizePage(page) {
+  if (!page || typeof page !== "object") return null;
+  const clean = { url: text(page.url, 2000), title: text(page.title, 300), referrer: text(page.referrer, 2000) };
+  const viewport = page.viewport && { width: size(page.viewport.width), height: size(page.viewport.height) };
+  if (viewport?.width !== undefined || viewport?.height !== undefined) clean.viewport = viewport;
+  return clean.url || clean.title || clean.referrer || clean.viewport ? clean : null;
+}
+
+export function currentPage() {
+  try {
+    return sanitizePage({
+      url: window.location.href,
+      title: document.title,
+      referrer: document.referrer,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+    });
+  } catch {
+    return null;
+  }
 }

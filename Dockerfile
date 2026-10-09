@@ -14,11 +14,11 @@ CMD ["sh", "-c", "npm run dev:embed & exec npm run dev -- --host 0.0.0.0"]
 FROM deps AS build
 COPY . .
 # Baked into the bundle at build time: the URL the *browser* uses to reach the LLM server.
-ARG VITE_API_URL=http://localhost:8000
+ARG VITE_CHAT_API_URL=http://localhost:8000
 # Widget key of the standalone app at / (embeds get theirs from the host page). Dev convenience only:
 # it is baked into the bundle, so never put a real secret key here for a public deployment.
-ARG VITE_CHAT_KEY=
-ENV VITE_API_URL=$VITE_API_URL VITE_CHAT_KEY=$VITE_CHAT_KEY
+ARG VITE_WIDGET_KEY=
+ENV VITE_CHAT_API_URL=$VITE_CHAT_API_URL VITE_WIDGET_KEY=$VITE_WIDGET_KEY
 RUN npm run build
 
 # --- serve ---

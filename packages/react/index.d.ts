@@ -24,8 +24,8 @@ export interface ChatWidgetProps {
   greeting?: string;
   /** Starter prompts on the empty chat. */
   suggestions?: string[];
-  /** The tenant's widget key from the admin console (required; sent as X-Chat-Key): pk_... on public sites
-   * (visitor mode), sk_... for the tenant's staff tools. It decides the tenant. Reloads the iframe. */
+  /** The tenant's widget key from the admin console (required; sent as X-Chat-Key), pk_.... It decides the
+   * tenant. Reloads the iframe. */
   chatKey: string;
   /** Optional tenant id; the key must then belong to that tenant. */
   tenant?: string;

@@ -11,31 +11,54 @@ standalone app at `/` and can be put on customer sites in three ways:
 
 `{origin}` is wherever this app is deployed, e.g. `http://localhost:5173`.
 
-### Widget key: which tenant, and staff vs. website visitor
+### Widget key: which tenant
 
 Every widget needs its tenant's **widget key**, created in the admin console (admin-frontend, Keys): the
 `data-key` attribute (loader, Shadow DOM), or the `chatKey` prop (React) / `key` option (`mount()`). It is sent as
 the `X-Chat-Key` header. The LLM server looks it up in the platform database, and the key alone decides:
 
-- **the tenant**: the MCP tools then see only that tenant's data;
-- **the audience**: a **public key** (`pk_…`) = website visitor. The assistant answers from the tenant's profile
-  and the knowledge trained from its files (visitors only get answers, never the files) and can take leads and
-  appointment requests. A **secret key** (`sk_…`) = the tenant's staff: the same knowledge, plus leads, appointments
-  and the library files.
+**the tenant** (the MCP tools then see only that tenant's data). Keys are public (`pk_…`) and go on the tenant's
+website: the assistant answers from the tenant's profile and the knowledge trained from its files (visitors only
+get answers, never the files) and can take leads and appointment requests.
 
 No key, a revoked key, a suspended tenant or a widget turned off in the admin console is refused. A tenant can pin
-its public keys to its own websites (widget "allowed origins", enforced for the Shadow DOM embed, which calls
+its keys to its own websites (widget "allowed origins", enforced for the Shadow DOM embed, which calls
 the API from the host page). The widget's title, greeting, launcher color and position default to the settings
 chosen in the admin console; attributes and props set on the page override them. `data-tenant` / `tenant` are
 optional: when set, the key must belong to that tenant.
 
-- **Public website:** the public key. See `examples/visitor.html`.
-- **Internal staff app:** the secret key. Treat it like a password; it is visible to anyone who can load that page.
+- **Website:** the key. See `examples/visitor.html`.
 - **Iframe (options 1 and 2):** the key travels in the URL fragment (`#key=…`). Browsers never send the fragment to a
   server, and the chat app removes it from its address bar. The embedded chat **never** falls back to the build's
-  `VITE_CHAT_KEY`, so only the host can grant staff access.
-- **Standalone app at `/`:** uses `VITE_CHAT_KEY` from `.env` (dev convenience). Don't set it on a build that is publicly reachable.
+  `VITE_WIDGET_KEY`, so only the host decides the tenant.
+- **Standalone app at `/`:** uses `VITE_WIDGET_KEY` from `.env` (dev convenience). Don't set it on a build that is publicly reachable.
 - `embed.js` never contains a key; it only sends the one passed to `mount()`.
+
+### Requests, visitor id and session
+
+Every request (all three options) carries `X-Chat-Key` and `X-Visitor-Id`: a random UUID the widget makes up on
+first load (`crypto.randomUUID`) and keeps in `localStorage` (`mcp-chat:visitor`; in memory only when storage is
+blocked). It identifies the visitor, not the IP address. The LLM server keeps one visitor per tenant for it, so the
+same browser on two tenants' sites is two visitors; if it ever answers with another `visitor_id` (ours was missing
+or invalid), the widget keeps that one.
+
+The LLM server stores the conversation as a **session**. The first `POST /api/chat` has no `session_id` and
+returns one; the widget keeps it per widget key (`mcp-chat:session:<key>`) and sends it with every message, together
+with only the new message (the server answers from the stored history). On load it shows the session's messages
+again (`GET /api/sessions/{id}`), so a page reload continues the chat. **New chat** closes the session
+(`POST /api/sessions/{id}/close`) and forgets its id; the next message starts a new one. A session that is gone
+or closed (e.g. from another tab) is forgotten too.
+
+Where it is kept: in options 1 and 2, the chat app's own storage inside the iframe (browsers partition it per
+website); in option 3, the host page's `localStorage`.
+
+A new session's first message also carries `client` (in the body, `src/lib/clientInfo.js`): what the browser tells
+without asking — `language`, `languages`, `timezone`, `screen` (`width`, `height`, `pixel_ratio`), `viewport`,
+`device_type` (mobile / tablet / desktop), `os`, `browser`, `browser_version`, `touch` — and the page the chat starts
+on: `page_url`, `page_title`, `referrer`. In options 1 and 2 the host side reports its page (`mcp-chat:page`, below);
+without it the iframe falls back to its referrer. Every field is optional. Nothing that needs a permission
+(location, notifications) and no fingerprinting (canvas, fonts, audio). The LLM server stores it with the session,
+and the device part with the visitor.
 
 ---
 
@@ -67,7 +90,7 @@ Including the script twice is a no-op. Everything set before the iframe is ready
 
 | Attribute | Values | Default |
 | --- | --- | --- |
-| `data-key` | **required**: the tenant's widget key (`pk_…` public site, `sk_…` staff) | none |
+| `data-key` | **required**: the tenant's widget key (`pk_…`) | none |
 | `data-title` | header title | the widget's title in the admin console |
 | `data-position` | `right` \| `left` | admin console setting |
 | `data-color` | launcher background (CSS color) | admin console accent color |
@@ -138,7 +161,7 @@ export function Assistant({ currentUser, matter }) {
 | `title` | `string` | `"Assistant"` | Reloads the iframe when changed. |
 | `greeting` | `string` | | Reloads the iframe when changed. |
 | `suggestions` | `string[]` | | Reloads the iframe when changed. |
-| `chatKey` | `string` | — (required) | The tenant's widget key (`pk_…` / `sk_…`). Reloads the iframe when changed. |
+| `chatKey` | `string` | — (required) | The tenant's widget key (`pk_…`). Reloads the iframe when changed. |
 | `tenant` | `string` | | Optional tenant id; the key must belong to it. |
 | `context` | `string` | | Pushed live. |
 | `user` | `{ id, name, email?, role? } \| null` | | Pushed live. |
@@ -198,7 +221,7 @@ is at `McpChatEmbed.autoMounted`). Including it twice is a no-op. Each `mount()`
 | `title` | `data-title` | admin console title | |
 | `greeting` | `data-greeting` | | |
 | `suggestions` | `data-suggestions` (`a\|b`) | | `string[]` |
-| `key` | `data-key` | — (required) | The tenant's widget key (`X-Chat-Key`): `pk_…` visitor, `sk_…` staff. |
+| `key` | `data-key` | — (required) | The tenant's widget key (`X-Chat-Key`), `pk_…`. |
 | `tenant` | `data-tenant` | | Optional tenant id; the key must belong to it. |
 | `context` | `data-context` | | |
 | `user` | `data-user` (JSON) | | `{ id, name, email?, role? }` |
@@ -232,11 +255,12 @@ Constants live in `src/lib/protocol.js` (bundled into the React package); `publi
 
 | Direction | `type` | Payload |
 | --- | --- | --- |
-| iframe → host | `mcp-chat:ready` | — (sent on load; host answers with theme, user and context) |
+| iframe → host | `mcp-chat:ready` | — (sent on load; host answers with theme, user, context and page) |
 | iframe → host | `mcp-chat:close` | — (close button in the chat header) |
 | host → iframe | `mcp-chat:context` | `{ context: string \| null }` (truncated to 2000 chars) |
 | host → iframe | `mcp-chat:user` | `{ user: { id, name, email?, role? } \| null }` (only these fields are kept) |
 | host → iframe | `mcp-chat:theme` | `{ theme: "light" \| "dark" \| "auto" }` |
+| host → iframe | `mcp-chat:page` | `{ page: { url, title, referrer, viewport: { width, height } } }` (the host page; also re-sent on open) |
 
 Checks: the host only accepts messages whose `origin` is the chat origin **and** whose `source` is its own iframe,
 and posts with the chat origin as `targetOrigin`. The chat app only accepts messages whose `source` is

@@ -1,13 +1,14 @@
 import { Moon, Sun } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { chatApi, fileApi, modelApi, toolApi } from "@/api/appServices";
+import { modelApi, services, toolApi } from "@/api/appServices";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { MessageList } from "@/components/chat/MessageList";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useChat } from "@/hooks/useChat";
+import { currentPage } from "@/lib/protocol";
 
 import { EmbeddedApp } from "./EmbeddedApp";
 
@@ -22,9 +23,7 @@ function StandaloneApp() {
   const [input, setInput] = useState("");
   const [model, setModel] = useState(null);
   const [tools, setTools] = useState([]);
-  const [files, setFiles] = useState([]);
   const [mcpStatus, setMcpStatus] = useState("connecting");
-  const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState(null);
   const [dark, setDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
 
@@ -33,9 +32,7 @@ function StandaloneApp() {
     setTimeout(() => setNotice(null), 4000);
   };
 
-  const loadFiles = useCallback(() => fileApi.list().then((d) => setFiles(d.files)).catch(() => {}), []);
-
-  const { messages, loading, send, reset } = useChat({ api: chatApi });
+  const { messages, loading, send, reset } = useChat({ services, getPage: currentPage });
 
   useEffect(() => {
     modelApi
@@ -52,8 +49,7 @@ function StandaloneApp() {
         setMcpStatus("up");
       })
       .catch(() => setMcpStatus("down"));
-    loadFiles();
-  }, [loadFiles]);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -65,42 +61,10 @@ function StandaloneApp() {
     setInput("");
   };
 
-  const handleUpload = async (file) => {
-    setUploading(true);
-    try {
-      const saved = await fileApi.upload(file);
-      await loadFiles();
-      setInput((v) => (v ? `${v} ` : "") + `\`${saved.path}\``);
-      flash(`Uploaded ${saved.path}`);
-    } catch (e) {
-      flash(e.message, true);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDelete = async (f) => {
-    if (!window.confirm(`Delete ${f.path}?`)) return;
-    try {
-      await fileApi.remove(f.path);
-      await loadFiles();
-    } catch (e) {
-      flash(e.message, true);
-    }
-  };
-
   return (
     <TooltipProvider>
       <div className="flex h-screen overflow-hidden">
-        <Sidebar
-          files={files}
-          tools={tools}
-          mcpStatus={mcpStatus}
-          onNewChat={reset}
-          onRefreshFiles={loadFiles}
-          onPickFile={(f) => setInput((v) => (v ? `${v} ` : "") + `\`${f.path}\``)}
-          onDeleteFile={handleDelete}
-        />
+        <Sidebar tools={tools} mcpStatus={mcpStatus} onNewChat={reset} />
 
         <main className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-14 items-center justify-between border-b px-4">
@@ -132,9 +96,7 @@ function StandaloneApp() {
             value={input}
             onChange={setInput}
             onSend={() => handleSend()}
-            onUpload={handleUpload}
             loading={loading}
-            uploading={uploading}
           />
         </main>
       </div>

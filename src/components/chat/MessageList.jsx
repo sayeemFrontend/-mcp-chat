@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 
 import { MessageBubble } from "./MessageBubble";
 
-// Defaults for hosts that don't pass their own (visitor-friendly, since that's the safe default audience).
+// Defaults for hosts that don't pass their own.
 const SUGGESTIONS = [
   "What do you offer?",
   "What are your opening hours?",

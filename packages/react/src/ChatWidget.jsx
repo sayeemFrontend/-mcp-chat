@@ -4,9 +4,11 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useInsertionEf
 import {
   MSG_CLOSE,
   MSG_CONTEXT,
+  MSG_PAGE,
   MSG_READY,
   MSG_THEME,
   MSG_USER,
+  currentPage,
   normalizeTheme,
   sanitizeUser,
 } from "../../../src/lib/protocol.js";
@@ -116,7 +118,7 @@ export const ChatWidget = forwardRef(function ChatWidget(
     if (inline) query.set("closable", "0");
     if (tenant) query.set("tenant", tenant);
     const url = new URL(`?${query}`, src.endsWith("/") ? src : `${src}/`);
-    // The widget key goes in the fragment (never sent to a server). It decides the tenant and audience.
+    // The widget key goes in the fragment (never sent to a server). It decides the tenant.
     if (chatKey) url.hash = `key=${encodeURIComponent(chatKey)}`;
     return url.toString();
   }, [src, title, greeting, suggestionsKey, inline, chatKey, tenant]);
@@ -164,6 +166,7 @@ export const ChatWidget = forwardRef(function ChatWidget(
         post({ type: MSG_THEME, theme: t });
         post({ type: MSG_USER, user: u });
         post({ type: MSG_CONTEXT, context: c });
+        post({ type: MSG_PAGE, page: currentPage() });
         if (first) latest.current.onReady?.();
       } else if (data.type === MSG_CLOSE && !inline) {
         setOpen(false);
@@ -177,6 +180,10 @@ export const ChatWidget = forwardRef(function ChatWidget(
   useEffect(() => post({ type: MSG_CONTEXT, context: contextText }), [post, contextText]);
   useEffect(() => post({ type: MSG_USER, user: cleanUser }), [post, cleanUser]);
   useEffect(() => post({ type: MSG_THEME, theme: themeName }), [post, themeName]);
+  // The host page, recorded when a session starts; re-sent on open so the app's current route is the one recorded.
+  useEffect(() => {
+    if (open) post({ type: MSG_PAGE, page: currentPage() });
+  }, [post, open]);
 
   useImperativeHandle(
     ref,

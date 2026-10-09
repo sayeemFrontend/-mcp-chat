@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { useWidgetSettings } from "@/hooks/useWidgetSettings";
 import { PortalContainerContext } from "@/lib/portal";
-import { buildContext } from "@/lib/protocol";
+import { buildContext, currentPage } from "@/lib/protocol";
 import { cn } from "@/lib/utils";
 
 // One mounted widget inside its shadow root. Host-page calls (open, setUser, ...) arrive through `store`.
@@ -43,6 +43,7 @@ export function EmbedRoot({ store, services, options: hostOptions }) {
       greeting={options.greeting}
       suggestions={options.suggestions}
       getContext={getContext}
+      getPage={currentPage}
       dark={dark}
       onToggleTheme={() => store.set({ theme: dark ? "light" : "dark" })}
       onClose={inline ? undefined : () => store.set({ open: false })}

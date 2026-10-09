@@ -42,7 +42,7 @@ export function Assistant({ currentUser, matter }) {
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `src` | `string` | — (required) | Chat app origin / base URL. |
-| `chatKey` | `string` | — (required) | The tenant's widget key (`pk_…` / `sk_…`). Reloads the iframe when changed. |
+| `chatKey` | `string` | — (required) | The tenant's widget key (`pk_…`). Reloads the iframe when changed. |
 | `tenant` | `string` | | Optional tenant id; the key must belong to it. |
 | `title` | `string` | `"Assistant"` | Reloads the iframe when changed. |
 | `greeting` | `string` | | Reloads the iframe when changed. |

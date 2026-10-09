@@ -6,7 +6,7 @@
  * Adds a floating launcher button that opens the chat app (this build, ?embed=1) in an iframe.
  * Options (data-* attributes on the script tag). Title, greeting, color and position default to the widget
  * settings the tenant chose in the admin console; an attribute here overrides them.
- *   data-key          the tenant's widget key (required): pk_... on public sites (visitor mode), sk_... for staff tools
+ *   data-key          the tenant's widget key (required): pk_... from the admin console
  *   data-title        header title inside the widget
  *   data-position     "right" | "left"
  *   data-color        launcher background color
@@ -33,6 +33,7 @@
   var MSG_USER = "mcp-chat:user";
   var MSG_THEME = "mcp-chat:theme";
   var MSG_SETTINGS = "mcp-chat:settings";
+  var MSG_PAGE = "mcp-chat:page";
 
   var script = document.currentScript;
   var ds = (script && script.dataset) || {};
@@ -112,10 +113,18 @@
     if (ready && iframe && iframe.contentWindow) iframe.contentWindow.postMessage(message, origin);
   }
 
+  // This page, which the chat records when a session starts (the iframe can't read it). Re-sent on every open, so
+  // a single-page app's current route is the one recorded.
+  function postPage() {
+    var viewport = { width: window.innerWidth, height: window.innerHeight };
+    post({ type: MSG_PAGE, page: { url: location.href, title: document.title, referrer: document.referrer, viewport: viewport } });
+  }
+
   function flush() {
     post({ type: MSG_THEME, theme: state.theme });
     post({ type: MSG_USER, user: state.user });
     post({ type: MSG_CONTEXT, context: state.context });
+    postPage();
   }
 
   function applyTheme() {
@@ -157,7 +166,10 @@
     next = !!next;
     if (next === isOpen) return;
     isOpen = next;
-    if (isOpen) loadFrame();
+    if (isOpen) {
+      loadFrame();
+      postPage();
+    }
     panel.classList.toggle("mcpw-open", isOpen);
     button.innerHTML = isOpen ? CLOSE_ICON : CHAT_ICON;
     button.setAttribute("aria-label", isOpen ? "Close chat" : "Open chat");
